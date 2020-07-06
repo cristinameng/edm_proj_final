@@ -1,26 +1,31 @@
-import urequests
 from machine import Pin
+import urequests
 import ujson
-from led import Led
-from button import Button
 
+led_red = Pin(21, Pin.OUT)
+led_yellow = Pin(22, Pin.OUT)
+led_green = Pin(19, Pin.OUT)
+button_left = Pin(23, Pin.IN, Pin.PULL_UP)
+button_right = Pin(18, Pin.IN, Pin.PULL_UP)
 
-led_red = Led(21)
-led_yellow = Led(22)
-led_green = Led(19)
-button_left = Button(23)
-button_right = Button(18)
 
 def getData():
     location = 'portugal'
     data1 = '2020-07-03T00:00:00Z'
     data2 = '2020-07-04T00:00:00Z'
     data3 = '2020-07-05T00:00:00Z'
+
+    #Datas de teste (numero de mortos é igual)
+    #data1 = '2020-06-25T00:00:00Z'
+    #data2 = '2020-06-26T00:00:00Z'
+    #data3 = '2020-06-27T00:00:00Z'
+
     url = 'https://api.covid19api.com/total/country/{0}?from={1}&to={2}'.format(location, data1, data2)
     url2 = 'https://api.covid19api.com/total/country/{0}?from={1}&to={2}'.format(location, data2, data3)
     dados_passado = urequests.get(url).json()
     dados_atual = urequests.get(url2).json()
-    return dados_passado, dados_atual
+    dados_output = dados_atual[1]
+    return dados_passado, dados_atual,dados_output
 
 def infetados():
     infetados_passado = []
@@ -50,15 +55,12 @@ def mortos():
     
     return novosmortos_passado, novosmortos_atual
 
-first = button_left.state()
-second = button_right.state()
-
 while True:
     novosmortos_passado, novosmortos_atual = mortos()
     novosinfetados_passado, novosinfetados_atual = infetados()
 
-    first = button_left.state()
-    second = button_right.state()
+    first = button_left.value()
+    second = button_right.value()
 
     if first and not second: #novos infetados
         led_red.off()
@@ -83,10 +85,7 @@ while True:
             led_green.on()
         elif novosmortos_atual == novosmortos_passado:
             led_yellow.on()
-    print('Pressione longamente o botão esquerdo para saber se o novo numero de infetados é superior ao do dia anterior, e o botão direito para as mortes.')
+    print('Press (until the led goes on) the left button to know if the number of infected is superior/inferior/equal to the one on the prior days, or the right button, for the deaths')
     print('Nas ultimas horas, registaram-se mais',novosmortos_atual, 'mortes e mais', novosinfetados_atual,'infetados.')
-    print(getData()[1])
-    #print('Atualmente registam-se',,'casos ativos e um total de',,'recuperados')
-#print(getData)
-#print('Do you think that the number of infected people increased? Press the right button for yes, and the left button for no')
-
+    #print('No dia anterior, tinham-se registado mais',novosmortos_passado, 'mortes e mais', novosinfetados_passado,'infetados.')
+    print(getData()[2]) #Dados do dia atual
